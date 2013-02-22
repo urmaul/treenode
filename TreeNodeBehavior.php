@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * This behavior adds tree node functionality to your CActiveRecord models.
  * 
  * @property-read integer $parentId
  * @property-read integer $sequence
@@ -11,13 +12,21 @@
  */
 class TreeNodeBehavior extends CActiveRecordBehavior
 {
+    /**
+     * Owner parent id attribute name.
+     * @var integer
+     */
     public $parentIdAttribute = 'parentId';
+    /**
+     * Owner sequence attribute name.
+     * @var integer
+     */
     public $sequenceAttribute = 'sequence';
     
     # Gettrers #
     
     /**
-     * Returns node parent id
+     * Returns node parent id.
      * @param CActiveRecord $node oprional. Default node is current.
      * @return integer
      */
@@ -30,7 +39,7 @@ class TreeNodeBehavior extends CActiveRecordBehavior
     }
     
     /**
-     * Returns node sequence
+     * Returns node sequence.
      * @param CActiveRecord $node oprional. Default node is current.
      * @return integer
      */
@@ -43,7 +52,7 @@ class TreeNodeBehavior extends CActiveRecordBehavior
     }
     
     /**
-     * Returns max sequence value for given parent id
+     * Returns max sequence value for given parent id.
      * @param integer $parentId parent id. Default value is current node parent id
      * @return integer|boolean max sequence value or false if parent has no child nodes
      */
@@ -122,7 +131,7 @@ class TreeNodeBehavior extends CActiveRecordBehavior
     }
     
     /**
-     * Inserts node after another node.
+     * Inserts node before another node.
      * @param CActiveRecord $parent
      */
     public function insertBefore($node)
@@ -157,7 +166,7 @@ class TreeNodeBehavior extends CActiveRecordBehavior
     # Events #
     
     /**
-     * Inits sequence attribute/
+     * Inits sequence attribute.
      * @param CEvent $event
      * @return boolean
      */

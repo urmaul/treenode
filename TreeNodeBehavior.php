@@ -16,16 +16,37 @@ class TreeNodeBehavior extends CActiveRecordBehavior
     
     # Gettrers #
     
-    public function getParentId()
+    /**
+     * Returns node parent id
+     * @param CActiveRecord $node oprional. Default node is current.
+     * @return integer
+     */
+    public function getParentId($node = null)
     {
-        return $this->getOwner()->getAttribute($this->parentIdAttribute);
+        if ($node === null)
+            $node = $this->getOwner();
+        
+        return $node->getAttribute($this->parentIdAttribute);
     }
     
-    public function getSequence()
+    /**
+     * Returns node sequence
+     * @param CActiveRecord $node oprional. Default node is current.
+     * @return integer
+     */
+    public function getSequence($node = null)
     {
-        return $this->getOwner()->getAttribute($this->sequenceAttribute);
+        if ($node === null)
+            $node = $this->getOwner();
+        
+        return $node->getAttribute($this->sequenceAttribute);
     }
     
+    /**
+     * Returns max sequence value for given parent id
+     * @param integer $parentId parent id. Default value is current node parent id
+     * @return integer|boolean max sequence value or false if parent has no child nodes
+     */
     public function getMaxSequence($parentId = null)
     {
         $owner = $this->getOwner();
@@ -45,6 +66,11 @@ class TreeNodeBehavior extends CActiveRecordBehavior
             ->queryScalar();
     }
     
+    /**
+     * Returns sequence value that should be new last value for current parent
+     * @param integer $parentId parent id. Default value is current node parent id
+     * @return integer
+     */
     public function getNewMaxSequence($parentId = null)
     {
         $sequence = $this->getMaxSequence($parentId);
@@ -52,10 +78,15 @@ class TreeNodeBehavior extends CActiveRecordBehavior
         return $sequence !== false ? $sequence + 1 : 0;
     }
     
+    /**
+     * Returns node position to move node to
+     * @param CActiveRecord $node
+     * @return array
+     */
     protected function getNodePosition($node)
     {
-        $parentId = $node->getAttribute($this->parentIdAttribute);
-        $sequence = $node->getAttribute($this->sequenceAttribute);
+        $parentId = $this->getParentId($node);
+        $sequence = $this->getSequence($node);
         
         $isLocalShift =
             $parentId == $this->getParentId() &&
@@ -113,7 +144,7 @@ class TreeNodeBehavior extends CActiveRecordBehavior
     }
     
     /**
-     * Detaches node from current sequence.
+     * Removes node from current sequence.
      */
     public function remove()
     {
@@ -125,6 +156,11 @@ class TreeNodeBehavior extends CActiveRecordBehavior
     
     # Events #
     
+    /**
+     * Inits sequence attribute/
+     * @param CEvent $event
+     * @return boolean
+     */
     public function beforeSave($event)
     {
         if ($this->getOwner()->getIsNewRecord()) {
@@ -137,9 +173,16 @@ class TreeNodeBehavior extends CActiveRecordBehavior
         return true;
     }
     
-    public function afterDelete($event)
+    /**
+     * Removes node from current sequence.
+     * @param CEvent $event
+     * @return boolean
+     */
+    public function beforeDelete($event)
     {
         $this->remove();
+        
+        return true;
     }
     
     # Internal methods #
@@ -155,6 +198,11 @@ class TreeNodeBehavior extends CActiveRecordBehavior
         );
     }
     
+    /**
+     * Decreases sequence for nodes between with sequence $start and $finish
+     * @param integer $start
+     * @param integer $finish
+     */
     protected function unshiftBetween($start, $finish)
     {
         $criteria = new CDbCriteria();
@@ -167,6 +215,21 @@ class TreeNodeBehavior extends CActiveRecordBehavior
         );
     }
     
+    /**
+     * Creates DB criteria to find current node neighbour nodes
+     * @param string $operation sequence value comparison operator
+     * It recognizes the following operators:
+     * 
+     * * <: the sequence must be less than current node sequence.
+     * * >: the sequence must be greater than current node sequence.
+     * * <=: the sequence must be less than or equal to current node sequence.
+     * * >=: the sequence must be greater than or equal to current node sequence.
+     * * <>: the sequence must not be the same as current node sequence.
+     * * =: the sequence must be equal to current node sequence.
+     * * none of the above: the sequence must be equal to current node sequence.
+     * 
+     * @return \CDbCriteria
+     */
     protected function createCriteria($operation = '')
     {
         $criteria = new CDbCriteria();
@@ -181,6 +244,11 @@ class TreeNodeBehavior extends CActiveRecordBehavior
         return $criteria;
     }
     
+    /**
+     * Sets parent id and sequence values for current node.
+     * @param integer $parentId
+     * @param integer $sequence
+     */
     protected function setPosition($parentId, $sequence)
     {
         $owner = $this->getOwner();
@@ -188,6 +256,11 @@ class TreeNodeBehavior extends CActiveRecordBehavior
         $owner->setAttribute($this->sequenceAttribute, $sequence);
     }
     
+    /**
+     * Moves current node to given position.
+     * @param integer $parentId
+     * @param integer $sequence
+     */
     protected function move($parentId, $sequence)
     {
         Yii::trace("Moving to $parentId:$sequence", 'treenode');
@@ -201,6 +274,9 @@ class TreeNodeBehavior extends CActiveRecordBehavior
         $this->save();
     }
     
+    /**
+     * Saves current node position.
+     */
     protected function save()
     {
         $this->getOwner()->saveAttributes(array(
